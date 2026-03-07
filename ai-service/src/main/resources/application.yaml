@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: ai-service
+
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+server:
+  port: 8083
+openai:
+  api-key: ${OPENAI_API_KEY}
+  model: gpt-4o-mini

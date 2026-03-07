@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        register: true
+
+    gateway:
+      routes:
+        - id: auth-service-8081
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+
+        - id: document-service-8082
+          uri: http://localhost:8082
+          predicates:
+            - Path=/documents/**
+
+jwt:
+  secret: your-super-secret-key-which-is-at-least-32-characters-long
+  expiration: 86400000
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG

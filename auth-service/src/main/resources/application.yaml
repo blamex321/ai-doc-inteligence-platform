@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: auth-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/auth_db
+
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+jwt:
+  secret: your-super-secret-key-which-is-at-least-32-characters-long
+  expiration: 86400000
+
+server:
+  port: 8081
+
+# Actuator / Consul integration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Optional: if Mongo is not running during dev and you want Consul health to be UP, disable the mongo health contributor
+# management.health.mongo.enabled: false

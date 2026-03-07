@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: document-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/document_db
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
