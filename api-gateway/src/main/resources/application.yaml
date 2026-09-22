@@ -4,25 +4,27 @@ spring:
 
   cloud:
     consul:
-      host: localhost
-      port: 8500
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
       discovery:
         register: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
 
     gateway:
       routes:
-        - id: auth-service-8081
-          uri: http://localhost:8081
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:lb://auth-service}
           predicates:
             - Path=/auth/**
 
-        - id: document-service-8082
-          uri: http://localhost:8082
+        - id: document-service
+          uri: ${DOCUMENT_SERVICE_URI:lb://document-service}
           predicates:
             - Path=/documents/**
 
 jwt:
-  secret: your-super-secret-key-which-is-at-least-32-characters-long
+  secret: ${JWT_SECRET:your-super-secret-key-which-is-at-least-32-characters-long}
   expiration: 86400000
 
 server:
@@ -32,12 +34,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info
   endpoint:
     health:
       show-details: when_authorized
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.loadbalancer: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.loadbalancer: INFO

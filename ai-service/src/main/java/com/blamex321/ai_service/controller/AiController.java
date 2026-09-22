@@ -11,23 +11,15 @@ import com.blamex321.ai_service.service.OpenAIService;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/ai")
+@RequiredArgsConstructor
 public class AiController {
 
     private final OpenAIService openAIService;
 
     @PostMapping("/analyze")
     public AIResponse analyze(@RequestBody AIRequest request) {
-
-        String rawResponse = openAIService.analyzeText(request.getText());
-
-        // Temporary: return raw response inside summary
-        return AIResponse.builder()
-                .summary(rawResponse)
-                .classification("LLM-Generated")
-                .riskScore("Dynamic")
-                .build();
+        return openAIService.analyzeText(request.getText());
     }
 }

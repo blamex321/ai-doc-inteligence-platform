@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  consul:
+    image: hashicorp/consul:1.15
+    container_name: doc-intel-consul
+    ports:
+      - "8500:8500"
+    command: agent -dev -client=0.0.0.0
+    networks:
+      - doc-net
+
+  mongodb:
+    image: mongo:6.0
+    container_name: doc-intel-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - doc-net
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: doc-intel-ai-service
+    ports:
+      - "8083:8083"
+    environment:
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+    depends_on:
+      - consul
+    networks:
+      - doc-net
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: doc-intel-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - MONGO_HOST=mongodb
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-key-which-is-at-least-32-characters-long}
+    depends_on:
+      - consul
+      - mongodb
+    networks:
+      - doc-net
+
+  document-service:
+    build:
+      context: ./document-service
+      dockerfile: Dockerfile
+    container_name: doc-intel-document-service
+    ports:
+      - "8082:8082"
+    environment:
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - MONGO_HOST=mongodb
+      - AI_SERVICE_URL=http://ai-service:8083/ai/analyze
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - doc_uploads:/app/uploads
+    depends_on:
+      - consul
+      - mongodb
+      - ai-service
+    networks:
+      - doc-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: doc-intel-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - AUTH_SERVICE_URI=http://auth-service:8081
+      - DOCUMENT_SERVICE_URI=http://document-service:8082
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-key-which-is-at-least-32-characters-long}
+    depends_on:
+      - consul
+      - auth-service
+      - document-service
+    networks:
+      - doc-net
+
+networks:
+  doc-net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  doc_uploads:

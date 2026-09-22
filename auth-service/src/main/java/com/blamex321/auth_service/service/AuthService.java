@@ -11,6 +11,8 @@ import com.blamex321.auth_service.dto.MessageResponse;
 import com.blamex321.auth_service.dto.RegisterRequest;
 import com.blamex321.auth_service.entity.Role;
 import com.blamex321.auth_service.entity.User;
+import com.blamex321.auth_service.exception.InvalidCredentialsException;
+import com.blamex321.auth_service.exception.UserAlreadyExistsException;
 import com.blamex321.auth_service.repository.UserRepository;
 import com.blamex321.auth_service.utility.JwtUtil;
 
@@ -27,7 +29,7 @@ public class AuthService {
     public MessageResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
         }
 
         User user = User.builder()
@@ -45,13 +47,14 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        String role = user.getRole() != null ? user.getRole().name() : Role.USER.name();
+        String token = jwtUtil.generateToken(user.getEmail(), role);
 
         return new AuthResponse(token);
     }

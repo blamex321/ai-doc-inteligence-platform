@@ -4,7 +4,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/document_db
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://${MONGO_HOST:localhost}:27017/document_db}
 
   servlet:
     multipart:
@@ -13,8 +13,8 @@ spring:
 
   cloud:
     consul:
-      host: localhost
-      port: 8500
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
       discovery:
         register: true
         health-check-path: /actuator/health
@@ -22,6 +22,13 @@ spring:
 
 server:
   port: 8082
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8083/ai/analyze}
+
+storage:
+  upload-dir: ${UPLOAD_DIR:}
 
 management:
   endpoints:

@@ -52,17 +52,27 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    public String generateToken(String email) {
+        return generateToken(email, "USER");
+    }
+
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("role", String.class);
     }
 
     public boolean validateToken(String token) {
