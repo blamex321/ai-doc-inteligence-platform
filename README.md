@@ -69,9 +69,16 @@ A production-grade, distributed microservices platform designed to ingest, extra
 5. **Clean Separation of Concerns**:
    - Completely decoupled Controller and Persistence layers by eliminating direct Repository calls from REST controllers.
    - Enforced typed DTO contracts (`DocumentResponse`, `DocumentAnalysisResponse`, `PagedResponse`, `ErrorResponse`).
-6. **Containerization & Automated Testing**:
-   - Multi-stage Dockerfiles for all microservices and unified `docker-compose.yml`.
-   - Comprehensive unit test suites utilizing **JUnit 5**, **Mockito**, and MockMvc.
+6. **Document RAG & Conversational Q&A ("Chat with Document")**:
+   - Semantic sliding-window chunking engine splits ingested texts into overlapping context segments.
+   - Relevance retrieval ranks chunks against user queries and feeds grounded context to `gpt-4o-mini` with strict anti-hallucination instructions.
+   - Transparent source citations drawer surfaces the exact retrieved document excerpts alongside AI responses.
+7. **Interactive Modern React Dashboard (`frontend/`)**:
+   - Built with React 19, Vite, and Tailwind CSS.
+   - Features real-time JWT authentication, drag-and-drop document upload, analytics overview metrics, instant PDF/DOCX downloads, and a conversational RAG chat modal with suggested query chips.
+8. **Containerization & Automated Testing**:
+   - Multi-stage Dockerfiles for all microservices and frontend with unified `docker-compose.yml`.
+   - Comprehensive unit test suites utilizing **JUnit 5**, **Mockito**, and MockMvc across all services.
 
 ---
 
@@ -159,6 +166,13 @@ All requests are routed through **API Gateway** (`http://localhost:8080`).
   ```bash
   curl -X GET http://localhost:8080/documents/<DOCUMENT_ID>/analysis \
     -H "Authorization: Bearer $TOKEN"
+  ```
+* **Document RAG & Conversational Q&A**:
+  ```bash
+  curl -X POST http://localhost:8080/documents/<DOCUMENT_ID>/chat \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"question":"What are the payment terms and due dates?"}'
   ```
 * **Download Document**:
   ```bash

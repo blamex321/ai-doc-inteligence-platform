@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.blamex321.document_service.dto.DocumentAnalysisResponse;
+import com.blamex321.document_service.dto.DocumentChatRequest;
+import com.blamex321.document_service.dto.DocumentChatResponse;
 import com.blamex321.document_service.dto.DocumentResponse;
 import com.blamex321.document_service.dto.PagedResponse;
 import com.blamex321.document_service.model.Document;
@@ -70,6 +73,15 @@ public class DocumentController {
             @RequestHeader("X-User-Email") String email
     ) {
         return documentService.getAnalysis(id, email);
+    }
+
+    @PostMapping("/{id}/chat")
+    public DocumentChatResponse chatWithDocument(
+            @PathVariable String id,
+            @RequestHeader("X-User-Email") String email,
+            @RequestBody DocumentChatRequest request
+    ) {
+        return documentService.chatWithDocument(id, email, request.getQuestion());
     }
 
     @GetMapping("/{id}/download")

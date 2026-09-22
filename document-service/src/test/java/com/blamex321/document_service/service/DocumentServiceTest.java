@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,8 +26,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
+import com.blamex321.document_service.dto.AIChatRequest;
+import com.blamex321.document_service.dto.AIChatResponse;
 import com.blamex321.document_service.dto.DocumentAnalysisResponse;
+import com.blamex321.document_service.dto.DocumentChatResponse;
 import com.blamex321.document_service.dto.DocumentResponse;
 import com.blamex321.document_service.exception.DocumentNotFoundException;
 import com.blamex321.document_service.exception.InvalidFileException;
@@ -45,6 +48,9 @@ class DocumentServiceTest {
     @Mock
     private AsyncDocumentProcessor asyncDocumentProcessor;
 
+    @Mock
+    private RestTemplate restTemplate;
+
     @InjectMocks
     private DocumentService documentService;
 
@@ -56,6 +62,7 @@ class DocumentServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(documentService, "uploadDir", tempDir.getAbsolutePath());
+        ReflectionTestUtils.setField(documentService, "aiChatUrl", "http://localhost:8083/ai/chat");
 
         sampleDoc = Document.builder()
                 .id("doc-123")
@@ -66,6 +73,7 @@ class DocumentServiceTest {
                 .uploadedBy("user@example.com")
                 .uploadedAt(LocalDateTime.now())
                 .processingStatus("COMPLETED")
+                .extractedText("This is sample extracted document content for testing.")
                 .summary("Test Summary")
                 .classification("Resume")
                 .riskScore("Low")
@@ -154,6 +162,40 @@ class DocumentServiceTest {
         assertEquals("Test Summary", analysis.getSummary());
         assertEquals("Resume", analysis.getClassification());
         assertEquals("Low", analysis.getRiskScore());
+    }
+
+    @Test
+    @DisplayName("Should successfully execute RAG Q&A with document")
+    void chatWithDocument_Success() {
+        when(documentRepository.findById("doc-123")).thenReturn(Optional.of(sampleDoc));
+        AIChatResponse mockAiResp = AIChatResponse.builder()
+                .answer("This is the grounded answer.")
+                .relevantSources(List.of("Source excerpt 1"))
+                .build();
+
+        when(restTemplate.postForObject(anyString(), any(AIChatRequest.class), eq(AIChatResponse.class)))
+                .thenReturn(mockAiResp);
+
+        DocumentChatResponse response = documentService.chatWithDocument("doc-123", "user@example.com", "What is in the doc?");
+
+        assertNotNull(response);
+        assertEquals("doc-123", response.getDocumentId());
+        assertEquals("This is the grounded answer.", response.getAnswer());
+        assertEquals(1, response.getRelevantSources().size());
+    }
+
+    @Test
+    @DisplayName("Should reject chat query if document processing is not yet completed")
+    void chatWithDocument_NotCompleted_ThrowsException() {
+        Document processingDoc = Document.builder()
+                .id("doc-pending")
+                .uploadedBy("user@example.com")
+                .processingStatus("PROCESSING")
+                .build();
+
+        when(documentRepository.findById("doc-pending")).thenReturn(Optional.of(processingDoc));
+
+        assertThrows(InvalidFileException.class, () -> documentService.chatWithDocument("doc-pending", "user@example.com", "Test?"));
     }
 
     @Test

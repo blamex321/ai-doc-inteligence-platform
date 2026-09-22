@@ -26,6 +26,8 @@ server:
 ai:
   service:
     url: ${AI_SERVICE_URL:http://localhost:8083/ai/analyze}
+  chat:
+    url: ${AI_CHAT_URL:http://localhost:8083/ai/chat}
 
 storage:
   upload-dir: ${UPLOAD_DIR:}

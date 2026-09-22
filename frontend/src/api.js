@@ -115,3 +115,20 @@ export async function deleteDocument(id) {
   }
   return res.json();
 }
+
+export async function chatWithDocument(id, question) {
+  const res = await fetch(`${API_BASE}/documents/${id}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Chat query failed' }));
+    throw new Error(error.message || 'Chat query failed');
+  }
+  return res.json();
+}
+

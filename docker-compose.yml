@@ -67,6 +67,7 @@ services:
       - CONSUL_PORT=8500
       - MONGO_HOST=mongodb
       - AI_SERVICE_URL=http://ai-service:8083/ai/analyze
+      - AI_CHAT_URL=http://ai-service:8083/ai/chat
       - UPLOAD_DIR=/app/uploads
     volumes:
       - doc_uploads:/app/uploads

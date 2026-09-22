@@ -19,9 +19,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.blamex321.document_service.dto.AIChatRequest;
+import com.blamex321.document_service.dto.AIChatResponse;
 import com.blamex321.document_service.dto.DocumentAnalysisResponse;
+import com.blamex321.document_service.dto.DocumentChatResponse;
 import com.blamex321.document_service.dto.DocumentResponse;
 import com.blamex321.document_service.dto.PagedResponse;
 import com.blamex321.document_service.exception.DocumentNotFoundException;
@@ -41,9 +45,13 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final AsyncDocumentProcessor asyncDocumentProcessor;
+    private final RestTemplate restTemplate;
 
     @Value("${storage.upload-dir:}")
     private String configuredUploadDir;
+
+    @Value("${ai.chat.url:http://localhost:8083/ai/chat}")
+    private String aiChatUrl;
 
     private String uploadDir;
 
@@ -135,6 +143,44 @@ public class DocumentService {
                 .classification(doc.getClassification())
                 .riskScore(doc.getRiskScore())
                 .keywords(doc.getKeywords() != null ? doc.getKeywords() : Collections.emptyList())
+                .build();
+    }
+
+    public DocumentChatResponse chatWithDocument(String id, String userEmail, String question) {
+        Document doc = getDocumentAndVerifyOwnership(id, userEmail);
+
+        if (!"COMPLETED".equalsIgnoreCase(doc.getProcessingStatus())) {
+            throw new InvalidFileException("Document processing is still in progress (Status: " + doc.getProcessingStatus() + "). Please wait until processing completes.");
+        }
+
+        if (doc.getExtractedText() == null || doc.getExtractedText().isBlank()) {
+            throw new InvalidFileException("Document contains no extracted text for Q&A.");
+        }
+
+        log.info("Sending RAG Q&A query to AI service for document ID: {}", id);
+        AIChatRequest chatRequest = new AIChatRequest(doc.getExtractedText(), question);
+
+        AIChatResponse chatResponse = null;
+        try {
+            chatResponse = restTemplate.postForObject(aiChatUrl, chatRequest, AIChatResponse.class);
+        } catch (Exception e) {
+            log.error("Failed to call AI Chat service at {}: {}", aiChatUrl, e.getMessage(), e);
+        }
+
+        String answer = (chatResponse != null && chatResponse.getAnswer() != null)
+                ? chatResponse.getAnswer()
+                : "Unable to retrieve an answer at this time. Please verify that the AI service is operational.";
+
+        List<String> sources = (chatResponse != null && chatResponse.getRelevantSources() != null)
+                ? chatResponse.getRelevantSources()
+                : Collections.emptyList();
+
+        return DocumentChatResponse.builder()
+                .documentId(doc.getId())
+                .fileName(doc.getFileName())
+                .question(question)
+                .answer(answer)
+                .relevantSources(sources)
                 .build();
     }
 
