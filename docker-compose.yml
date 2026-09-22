@@ -97,6 +97,18 @@ services:
     networks:
       - doc-net
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: doc-intel-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - doc-net
+
 networks:
   doc-net:
     driver: bridge

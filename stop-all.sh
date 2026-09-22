@@ -20,7 +20,7 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # Kill any remaining instances by port to ensure clean ports
-PORTS=(8080 8081 8082 8083)
+PORTS=(3000 8080 8081 8082 8083)
 for PORT in "${PORTS[@]}"; do
     PID=$(lsof -ti :"$PORT" 2>/dev/null)
     if [ -n "$PID" ]; then
@@ -29,5 +29,5 @@ for PORT in "${PORTS[@]}"; do
     fi
 done
 
-echo "✅ All microservices stopped."
+echo "✅ All microservices and frontend stopped."
 echo "=========================================================="

@@ -43,10 +43,10 @@ echo "✅ MongoDB is running on port 27017"
 # Check OpenAI API Key
 if [ -z "$OPENAI_API_KEY" ]; then
     echo "⚠️  WARNING: OPENAI_API_KEY environment variable is NOT set!"
-    echo "   ai-service may fail to start. Export it using: export OPENAI_API_KEY=\"your-key\""
+    echo "   ai-service will operate in intelligent mock fallback mode."
 fi
 
-# Function to launch a service
+# Function to launch a backend service
 start_service() {
     local SERVICE_NAME=$1
     local SERVICE_DIR="$ROOT_DIR/$SERVICE_NAME"
@@ -58,7 +58,7 @@ start_service() {
     echo "$SERVICE_NAME:$PID" >> "$PID_FILE"
 }
 
-# 2. Launch Services in Sequence
+# 2. Launch Backend Services in Sequence
 start_service "ai-service"
 sleep 4
 start_service "auth-service"
@@ -66,17 +66,27 @@ sleep 3
 start_service "document-service"
 sleep 3
 start_service "api-gateway"
+sleep 3
+
+# 3. Launch Frontend UI
+if [ -d "$ROOT_DIR/frontend" ]; then
+    echo "▶️  Starting frontend dashboard (Port 3000)..."
+    (cd "$ROOT_DIR/frontend" && npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1) &
+    FRONTEND_PID=$!
+    echo "frontend:$FRONTEND_PID" >> "$PID_FILE"
+fi
 
 echo ""
 echo "=========================================================="
-echo "🎉 All services are launching in background!"
+echo "🎉 All services and Frontend UI are active!"
 echo "=========================================================="
-echo "Service Ports:"
-echo "  - API Gateway:      http://localhost:8080 (Primary entry point)"
-echo "  - Auth Service:     http://localhost:8081"
-echo "  - Document Service: http://localhost:8082"
-echo "  - AI Service:       http://localhost:8083"
-echo "  - Consul Dashboard: http://localhost:8500/ui"
+echo "Endpoints:"
+echo "  - 🖥️  Frontend UI:       http://localhost:3000 (Open in browser)"
+echo "  - 🌐 API Gateway:       http://localhost:8080"
+echo "  - 🔐 Auth Service:      http://localhost:8081"
+echo "  - 📄 Document Service:  http://localhost:8082"
+echo "  - 🧠 AI Service:        http://localhost:8083"
+echo "  - 📊 Consul Dashboard:  http://localhost:8500/ui"
 echo ""
 echo "Logs are available in: $ROOT_DIR/logs/"
 echo "To tail all logs:"
