@@ -175,12 +175,17 @@ public class DocumentService {
                 ? chatResponse.getRelevantSources()
                 : Collections.emptyList();
 
+        String responseModel = (chatResponse != null && chatResponse.getModel() != null)
+                ? chatResponse.getModel()
+                : "local-heuristic-engine";
+
         return DocumentChatResponse.builder()
                 .documentId(doc.getId())
                 .fileName(doc.getFileName())
                 .question(question)
                 .answer(answer)
                 .relevantSources(sources)
+                .model(responseModel)
                 .build();
     }
 

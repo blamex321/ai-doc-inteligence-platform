@@ -17,4 +17,5 @@ public class DocumentChatResponse {
     private String question;
     private String answer;
     private List<String> relevantSources;
+    private String model;
 }

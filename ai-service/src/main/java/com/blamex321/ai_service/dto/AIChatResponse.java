@@ -14,4 +14,5 @@ import lombok.NoArgsConstructor;
 public class AIChatResponse {
     private String answer;
     private List<String> relevantSources;
+    private String model;
 }

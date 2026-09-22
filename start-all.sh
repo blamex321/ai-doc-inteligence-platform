@@ -9,6 +9,14 @@ PID_FILE="$ROOT_DIR/.pids"
 # Clear existing PID file
 rm -f "$PID_FILE"
 
+# Load .env if present
+if [ -f "$ROOT_DIR/.env" ]; then
+    echo "📄 Loading environment variables from .env..."
+    set -a
+    source "$ROOT_DIR/.env"
+    set +a
+fi
+
 echo "=========================================================="
 echo "🚀 Starting AI Document Intelligence Platform"
 echo "=========================================================="
@@ -41,9 +49,12 @@ fi
 echo "✅ MongoDB is running on port 27017"
 
 # Check OpenAI API Key
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "⚠️  WARNING: OPENAI_API_KEY environment variable is NOT set!"
-    echo "   ai-service will operate in intelligent mock fallback mode."
+if [ -n "$OPENAI_API_KEY" ]; then
+    echo "✅ OPENAI_API_KEY is active. ai-service will use OpenAI GPT-4o-mini."
+else
+    echo "ℹ️  OPENAI_API_KEY is not set."
+    echo "   ai-service will operate with the upgraded Local Semantic RAG Fallback."
+    echo "   (To use OpenAI GPT-4o-mini: add OPENAI_API_KEY=sk-... to .env or run export OPENAI_API_KEY='sk-...')"
 fi
 
 # Function to launch a backend service
@@ -53,8 +64,9 @@ start_service() {
     local LOG_FILE="$ROOT_DIR/logs/$SERVICE_NAME.log"
 
     echo "▶️  Starting $SERVICE_NAME..."
-    (cd "$SERVICE_DIR" && ./mvnw spring-boot:run > "$LOG_FILE" 2>&1) &
+    (cd "$SERVICE_DIR" && nohup env OPENAI_API_KEY="$OPENAI_API_KEY" ./mvnw spring-boot:run > "$LOG_FILE" 2>&1) &
     local PID=$!
+    disown "$PID" 2>/dev/null
     echo "$SERVICE_NAME:$PID" >> "$PID_FILE"
 }
 
@@ -71,8 +83,9 @@ sleep 3
 # 3. Launch Frontend UI
 if [ -d "$ROOT_DIR/frontend" ]; then
     echo "▶️  Starting frontend dashboard (Port 3000)..."
-    (cd "$ROOT_DIR/frontend" && npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1) &
+    (cd "$ROOT_DIR/frontend" && nohup npm run dev > "$ROOT_DIR/logs/frontend.log" 2>&1) &
     FRONTEND_PID=$!
+    disown "$FRONTEND_PID" 2>/dev/null
     echo "frontend:$FRONTEND_PID" >> "$PID_FILE"
 fi
 

@@ -106,4 +106,35 @@ class OpenAIServiceTest {
         assertNotNull(emptyQResponse);
         assertEquals("Please provide a question about the document.", emptyQResponse.getAnswer());
     }
+
+    @Test
+    @DisplayName("Should prioritize work experience over contact header for candidate experience query")
+    void askDocumentQuestion_ResumeExperience_PicksWorkExperienceOverContactHeader() {
+        String resume = """
+                Laxman Bankupalle
+                Bengaluru, India | laxman.bankupalle@gmail.com | +91 91087 90779
+                LinkedIn | GitHub | Portfolio
+                
+                Professional Summary
+                Software Engineer with experience in full-stack development and distributed systems.
+                
+                Work Experience
+                Senior Software Engineer at FinTech Corp (2022 - Present)
+                - Developed reactive microservices using Spring Boot and MongoDB, reducing latency by 40%.
+                - Architected high-throughput payment settlement pipelines processing 1M transactions daily.
+                - Led team of 4 engineers in migrating monolithic core to event-driven architecture.
+                
+                Education
+                B.Tech in Computer Science
+                """;
+
+        AIChatResponse response = openAIService.askDocumentQuestion(resume, "what is the experience of this candidate");
+
+        assertNotNull(response);
+        assertNotNull(response.getAnswer());
+        assertFalse(response.getAnswer().startsWith("Based on document context regarding"));
+        assertTrue(response.getAnswer().toLowerCase().contains("experience"));
+        assertTrue(response.getAnswer().toLowerCase().contains("software engineer") || response.getAnswer().toLowerCase().contains("fintech"));
+        assertEquals("local-heuristic-engine", response.getModel());
+    }
 }

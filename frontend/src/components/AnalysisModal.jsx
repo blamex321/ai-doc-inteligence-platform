@@ -348,7 +348,23 @@ export default function AnalysisModal({ document, onClose }) {
                           : 'bg-slate-800/80 border border-slate-700/80 text-slate-200 rounded-tl-none'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.sender === 'ai' && msg.model && (
+                        <div className="flex items-center space-x-1.5 mb-2 pb-1.5 border-b border-slate-700/40 text-[10px]">
+                          <Sparkles className="w-3 h-3 text-indigo-400" />
+                          <span className="font-semibold text-slate-400 uppercase tracking-wider">
+                            Engine:
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${
+                            msg.model.includes('gpt') 
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                              : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                          }`}>
+                            {msg.model.includes('gpt') ? 'OpenAI GPT-4o-mini' : 'Local Semantic RAG Engine'}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="whitespace-pre-wrap font-sans">{msg.text}</div>
 
                       {/* Source Citations Drawer for AI replies */}
                       {msg.sources && msg.sources.length > 0 && (
